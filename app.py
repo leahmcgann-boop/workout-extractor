@@ -80,7 +80,7 @@ def index():
     results = None
     if request.method == 'POST':
         if request.is_json and 'url' in request.json:
-            # API-style JSON request
+            # API-style JSON request - return mobile-friendly HTML
             url = request.json['url']
             video_id = extract_video_id(url)
             if video_id:
@@ -93,7 +93,61 @@ def index():
                         results = extract_exercises(transcript)
             else:
                 results = "Invalid YouTube URL"
-            return results or ""
+            
+            # Generate mobile-friendly HTML response
+            html_content = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Exercises</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 18px;
+            line-height: 1.6;
+            padding: 20px;
+            background-color: white;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        ul {
+            list-style-type: disc;
+            padding-left: 20px;
+        }
+        li {
+            margin: 12px 0;
+            padding: 8px 0;
+        }
+        .error {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Extracted Exercises</h1>"""
+            
+            if results and results != "Invalid YouTube URL":
+                html_content += "<ul>\n"
+                for line in results.split('\n'):
+                    line = line.strip()
+                    if line.startswith('-'):
+                        exercise = line[1:].strip()
+                        html_content += f"    <li>{exercise}</li>\n"
+                html_content += "</ul>\n"
+            else:
+                html_content += f"<p class=\"error\">{results or 'No exercises found'}</p>\n"
+            
+            html_content += "</body>\n</html>"
+            
+            return html_content
         else:
             # Form submission from browser
             url = request.form.get('url')
