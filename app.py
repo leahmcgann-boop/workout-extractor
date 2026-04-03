@@ -79,8 +79,9 @@ Only provide the final bullet list (no extra commentary)."""
 def index():
     results = None
     if request.method == 'POST':
-        url = request.form.get('url')
-        if url:
+        if request.is_json and 'url' in request.json:
+            # API-style JSON request
+            url = request.json['url']
             video_id = extract_video_id(url)
             if video_id:
                 description = get_video_description(video_id)
@@ -92,6 +93,22 @@ def index():
                         results = extract_exercises(transcript)
             else:
                 results = "Invalid YouTube URL"
+            return results or ""
+        else:
+            # Form submission from browser
+            url = request.form.get('url')
+            if url:
+                video_id = extract_video_id(url)
+                if video_id:
+                    description = get_video_description(video_id)
+                    if description:
+                        results = extract_exercises(description)
+                    if not results:
+                        transcript = get_transcript(video_id)
+                        if transcript:
+                            results = extract_exercises(transcript)
+                else:
+                    results = "Invalid YouTube URL"
     return render_template('index.html', results=results)
 
 if __name__ == '__main__':
